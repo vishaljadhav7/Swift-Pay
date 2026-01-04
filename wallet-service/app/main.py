@@ -2,43 +2,48 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from app.core.config import settings
-from app.core.database import close_db, init_db
-from app.controller.user import router as user_router
 
+from app.controller.wallet import router as wallet_router
+from app.core.database import init_db, close_db
+from app.core.config import settings
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan events"""
+    """Lifespan events - startup and shutdown"""
     # Startup
     logger.info(f"Starting {settings.SERVICE_NAME}...")
     await init_db()
     logger.info("Database initialized")
     
+    # Start hold expiry scheduler
+    # await hold_expiry_scheduler.start()
+    
     yield
+    
     # Shutdown
     logger.info("Shutting down...")
+    # await hold_expiry_scheduler.stop()
     await close_db()
-    logger.info("Database connections closed")
-
-
-
+    logger.info("Shutdown complete")
+    
+    
+    
+# Create FastAPI app
 app = FastAPI(
-    title="User Service",
-    description="User management and authentication service",
+    title="Wallet Service",
+    description="Wallet management with holds and transactions",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# CORS middleware
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,13 +52,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Add global exception handler
+# # Add global exception handler
 # app.add_middleware(ExceptionHandlerMiddleware)
 
-# Include routers
-app.include_router(user_router)
-
+# # Include routers
+app.include_router(wallet_router)
 
 
 @app.get("/")
@@ -73,4 +76,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=settings.SERVICE_PORT,
         reload=True
-    )
+    )    

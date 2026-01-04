@@ -6,7 +6,7 @@ import uuid
 import enum
 
 class Roles(str, enum.Enum):
-    USER = 'user'
+    USER = "user"
     ADMIN = "admin"
 
 
