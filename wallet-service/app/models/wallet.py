@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import ForeignKey, String, DateTime, Enum as SQLEnum 
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship, MappedAsDataclass
 from sqlalchemy.sql import func
 import uuid
 import enum
@@ -10,7 +10,7 @@ class WalletStatuses(str, enum.Enum):
     CAPTURED = "captured"
     RELEASED = "released"
     
-class Base(DeclarativeBase):
+class Base(DeclarativeBase, MappedAsDataclass):
     pass
 
 
@@ -54,7 +54,7 @@ class Wallet(Base):
     )
     
         # Relationships
-    holds: Mapped[list["WalletHold"]] = relationship(back_populates="wallet", cascade="all, delete-orphan")
+    holds: Mapped[list["WalletHold"]] = relationship(back_populates="wallet", cascade="all, delete-orphan", default_factory=list)
     
     def __repr__(self):
         return f"<Wallet(id={self.id}, user_id={self.user_id}, balance={self.balance})>"
@@ -86,6 +86,8 @@ class WalletHold(Base):
     
     amount: Mapped[int] = mapped_column(nullable=False)
     
+    expires_at: Mapped[datetime | None] = mapped_column(default=None,nullable=True)
+    
     status: Mapped[WalletStatuses] = mapped_column(
         SQLEnum(WalletStatuses, values_callable=lambda enum: [e.value for e in enum], native_enum=False), 
         default=WalletStatuses.ACTIVE,
@@ -99,11 +101,8 @@ class WalletHold(Base):
     )
     
     
-    
-    expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    
     # Relationships
-    wallet: Mapped["Wallet"] = relationship(back_populates="holds")
+    wallet: Mapped["Wallet"] = relationship(back_populates="holds", default=None)
     
     def __repr__(self):
         return f"<WalletHold(id={self.id}, reference={self.hold_reference}, status={self.status})>"    

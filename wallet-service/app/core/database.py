@@ -4,8 +4,7 @@ from app.models.wallet import Base
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,
-    future=False
+    echo=False
 )
 
 AsyncSessionLocal = async_sessionmaker(
