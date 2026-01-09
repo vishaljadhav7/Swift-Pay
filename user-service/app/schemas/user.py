@@ -31,3 +31,17 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"           
     
+    
+class WalletCreateRequest(BaseModel):
+    """Request to create wallet"""
+    user_id: str
+    currency: str = "INR"
+    
+    
+class WalletResponse(BaseModel):
+    """Wallet response from wallet service"""
+    id: str
+    user_id: str
+    currency: str
+    balance: int
+    available_balance: int    

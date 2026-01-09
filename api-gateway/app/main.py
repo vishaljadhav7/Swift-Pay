@@ -6,7 +6,7 @@ import logging
 
 from app.core.config import settings
 from app.middleware.auth_middleware import AuthMiddleware
-from api_gateway.app.middleware.rate_limiter_middleware import RateLimiter, RateLimiterMiddleware
+from app.middleware.rate_limiter_middleware import RateLimiter, RateLimiterMiddleware
 # from app.middleware.exception_handler import ExceptionHandlerMiddleware
 from app.services.proxy_service import proxy_service
 

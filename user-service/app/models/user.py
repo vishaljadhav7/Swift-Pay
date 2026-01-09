@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import String, DateTime, Enum as SQLEnum 
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, MappedAsDataclass
 from sqlalchemy.sql import func
 import uuid
 import enum
@@ -10,7 +10,7 @@ class Roles(str, enum.Enum):
     ADMIN = "admin"
 
 
-class Base(DeclarativeBase):
+class Base(DeclarativeBase, MappedAsDataclass):
     pass
 
 class User(Base):
@@ -50,5 +50,5 @@ class User(Base):
         init=False
     )
     
-    def __repr__(self):
-        return f"<User(id={self.id}, email={self.email}, role={self.role})>"
+    # def __repr__(self):
+    #     return f"<User(id={self.id}, email={self.email}, role={self.role})>"

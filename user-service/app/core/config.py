@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     SERVICE_NAME: str = "user-service"
     SERVICE_PORT: int = 8081
     
-    DATABASE_URL: str
+    DATABASE_URL: str 
     
     WALLET_SERVICE_URL: str = "http://localhost:8088"
     

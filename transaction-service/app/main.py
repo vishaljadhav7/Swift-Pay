@@ -3,16 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 
-from app.controller.wallet import router as wallet_router
-from app.core.database import init_db, close_db
 from app.core.config import settings
-from app.tasks.hold_expiry_scheduler import hold_expiry_scheduler
+from app.core.database import init_db, close_db
+from app.utils.kafka_client import KafkaProducerClient
+from app.services.transaction import transaction_service
+from app.controller.transaction import router as transaction_router
+
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+# Kafka producer
+kafka_producer = KafkaProducerClient(bootstrap_servers="localhost:9092")
 
 
 @asynccontextmanager
@@ -23,23 +29,22 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
     
-    # Start hold expiry scheduler
-    await hold_expiry_scheduler.start()
+    # Start Kafka producer
+    await kafka_producer.start()
+    transaction_service.set_kafka_producer(kafka_producer)
     
     yield
     
     # Shutdown
     logger.info("Shutting down...")
-    await hold_expiry_scheduler.stop()
+    await kafka_producer.stop()
     await close_db()
     logger.info("Shutdown complete")
     
     
-    
-# Create FastAPI app
 app = FastAPI(
-    title="Wallet Service",
-    description="Wallet management with holds and transactions",
+    title="Transaction Service",
+    description="Money transfer orchestration service",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -57,7 +62,7 @@ app.add_middleware(
 # app.add_middleware(ExceptionHandlerMiddleware)
 
 # # Include routers
-app.include_router(wallet_router)
+app.include_router(transaction_router)
 
 
 @app.get("/")
