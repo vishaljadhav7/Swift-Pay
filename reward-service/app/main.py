@@ -1,13 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import asyncio
 import logging
 
 from app.core.config import settings
 from app.core.database import init_db, close_db
-from app.utils.kafka_client import KafkaProducerClient
-from app.services.transaction import transaction_service
-from app.controllers.transaction import router as transaction_router
+from app.controllers.reward import router as reward_router
+# from app.middleware.exception_handler import ExceptionHandlerMiddleware
+from app.kafka.kafka_client import KafkaConsumerClient
+from app.kafka.reward_consumer import reward_consumer
 
 
 logging.basicConfig(
@@ -16,40 +18,45 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
-# Kafka producer
-kafka_producer = KafkaProducerClient(bootstrap_servers="localhost:9092")
+# Kafka consumer
+kafka_consumer = KafkaConsumerClient(
+    topic="txn-initiated",
+    group_id="reward-group",
+    bootstrap_servers="localhost:9092"
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan events - startup and shutdown"""
+    """Lifespan events"""
     # Startup
     logger.info(f"Starting {settings.SERVICE_NAME}...")
     await init_db()
     logger.info("Database initialized")
     
-    # Start Kafka producer
-    await kafka_producer.start()
-    transaction_service.set_kafka_producer(kafka_producer)
+    # Start Kafka consumer in background
+    await kafka_consumer.start()
+    consumer_task = asyncio.create_task(
+        kafka_consumer.consume_messages(reward_consumer.handle_transaction_event)
+    )
     
     yield
     
     # Shutdown
     logger.info("Shutting down...")
-    await kafka_producer.stop()
+    consumer_task.cancel()
+    await kafka_consumer.stop()
     await close_db()
     logger.info("Shutdown complete")
-    
-    
+
+
 app = FastAPI(
-    title="Transaction Service",
-    description="Money transfer orchestration service",
+    title="Reward Service",
+    description="Reward service with Kafka consumer",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,16 +65,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# # Add global exception handler
 # app.add_middleware(ExceptionHandlerMiddleware)
 
-# # Include routers
-app.include_router(transaction_router)
+app.include_router(reward_router)
 
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """Health check"""
     return {
         "service": settings.SERVICE_NAME,
         "status": "running",
@@ -82,4 +87,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=settings.SERVICE_PORT,
         reload=True
-    )    
+    )

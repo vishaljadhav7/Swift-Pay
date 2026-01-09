@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 from app.core.config import settings
 from app.core.database import close_db, init_db
-from app.controller.user import router as user_router
+from app.controllers.user import router as user_router
 
 
 logging.basicConfig(
