@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class ProxyService:
     """Handles proxying requests to backend services"""
-    
+         
     # Service registry
     SERVICE_ROUTES = {
         "/auth": "http://localhost:8081",
@@ -15,7 +15,7 @@ class ProxyService:
         "/api/wallets": "http://localhost:8088",
         "/api/notify": "http://localhost:8084",
         "/api/rewards": "http://localhost:8089",
-    }
+    }    
     
     
     async def proxy_request(self, request: Request) -> Response:
@@ -75,6 +75,5 @@ class ProxyService:
                 return service_url
         return None
     
-    
-# Singleton instance
+
 proxy_service = ProxyService()    

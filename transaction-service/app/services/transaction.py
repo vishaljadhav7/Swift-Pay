@@ -12,7 +12,8 @@ from app.core.exceptions import (
     TransactionNotFoundException,
     ForbiddenException,
     BadRequestException,
-    ServiceUnavailableException
+    ServiceUnavailableException,
+    DuplicateTransactionException
 )
 
 from app.utils.kafka_client import KafkaProducerClient
@@ -36,7 +37,6 @@ class TransactionService:
         db: AsyncSession, 
         data: TransactionCreateRequest
     ) -> TransactionResponse:
-        
         """
         Create a money transfer transaction
         Implements 2-phase commit: Hold → Capture → Credit
@@ -48,22 +48,21 @@ class TransactionService:
         )
         
         if existing:
-            logger.info(f"Duplicate transaction detected: {data.idempotency_key}")
-            return TransactionResponse.from_orm(existing)
-                
+            logger.warning(f"Duplicate transaction detected: {data.idempotency_key}")
+            raise DuplicateTransactionException(data.idempotency_key)
+                        
         logger.info("Entered create transaction")
         
         sender_id = data.sender_id
         receiver_id = data.receiver_id
         amount = data.amount
         
-        amount_in_paise = int(amount * 100)
-        
         transaction = Transaction(
             sender_id=sender_id,
             receiver_id=receiver_id,
             amount=amount,
-            status="PENDING"
+            status="PENDING",
+            idempotency_key=data.idempotency_key
         )
         
         saved_transaction = await transaction_repository.create(db, transaction)
@@ -73,10 +72,9 @@ class TransactionService:
         hold_reference = None
         captured = False
         
-        
         try:
             # Step 1: Place hold on sender wallet
-            hold_reference = await self._place_hold(sender_id, amount_in_paise)
+            hold_reference = await self._place_hold(sender_id, amount)
             logger.info(f"Hold placed: {hold_reference}")
             
             # Step 2: Check receiver wallet exists
@@ -90,7 +88,7 @@ class TransactionService:
                 logger.info("Transaction FAILED (receiver wallet missing)")
                 return TransactionResponse.from_orm(saved_transaction)
             
-             # Step 3: Capture hold → debit sender wallet
+            # Step 3: Capture hold → debit sender wallet
             try:
                 await self._capture_hold(hold_reference)
                 captured = True
@@ -105,13 +103,13 @@ class TransactionService:
             
             # Step 4: Credit receiver wallet
             try:
-                await self._credit_wallet(receiver_id, amount_in_paise)
+                await self._credit_wallet(receiver_id, amount)
                 logger.info("💰 Receiver credited successfully")
             except Exception as e:
                 logger.error(f"Credit failed: {e}")
                 # Compensating transaction: refund sender
                 try:
-                    await self._credit_wallet(sender_id, amount_in_paise)
+                    await self._credit_wallet(sender_id, amount)
                     logger.info("Compensating refund to sender succeeded")
                 except Exception as refund_error:
                     logger.error(f"Compensating refund failed: {refund_error}")
@@ -135,7 +133,6 @@ class TransactionService:
             logger.info("Transaction FAILED saved")
             return TransactionResponse.from_orm(saved_transaction)   
         
-        
         # Step 6: Send Kafka event
         if self.kafka_producer and saved_transaction.status == "SUCCESS":
             try:
@@ -158,7 +155,6 @@ class TransactionService:
         
         return TransactionResponse.from_orm(saved_transaction) 
         
-        
     async def get_transaction_by_id(
         self, 
         db: AsyncSession, 
@@ -179,32 +175,47 @@ class TransactionService:
         transactions = await transaction_repository.get_by_user(db, user_id)
         return [TransactionResponse.from_orm(t) for t in transactions]
     
-    # methods for wallet service calls
+    # HTTP client methods with proper error handling
     
     async def _place_hold(self, user_id: int, amount: int) -> str:
         """Place hold on sender wallet"""
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.wallet_service_url}/hold",
-                json={"user_id": user_id, "currency": "INR", "amount": amount},
-                timeout=10.0
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["hold_reference"]
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.wallet_service_url}/hold",
+                    json={"user_id": user_id, "currency": "INR", "amount": amount},
+                    timeout=10.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["hold_reference"]
+        except httpx.TimeoutException:
+            raise ServiceUnavailableException("Wallet")
+        except httpx.HTTPStatusError as e:
+            # Re-raise as-is to let caller handle business logic errors
+            raise
+        except httpx.RequestError:
+            raise ServiceUnavailableException("Wallet")
     
     async def _capture_hold(self, hold_reference: str):
         """Capture hold (debit)"""
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.wallet_service_url}/capture",
-                json={"hold_reference": hold_reference},
-                timeout=10.0
-            )
-            response.raise_for_status()
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.wallet_service_url}/capture",
+                    json={"hold_reference": hold_reference},
+                    timeout=10.0
+                )
+                response.raise_for_status()
+        except httpx.TimeoutException:
+            raise ServiceUnavailableException("Wallet")
+        except httpx.HTTPStatusError:
+            raise
+        except httpx.RequestError:
+            raise ServiceUnavailableException("Wallet")
     
     async def _release_hold(self, hold_reference: str):
-        """Release hold"""
+        """Release hold - best effort, logs errors but doesn't raise"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -217,21 +228,35 @@ class TransactionService:
     
     async def _credit_wallet(self, user_id: int, amount: int):
         """Credit wallet"""
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.wallet_service_url}/credit",
-                json={"user_id": user_id, "currency": "INR", "amount": amount},
-                timeout=10.0
-            )
-            response.raise_for_status()
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.wallet_service_url}/credit",
+                    json={"user_id": user_id, "currency": "INR", "amount": amount},
+                    timeout=10.0
+                )
+                response.raise_for_status()
+        except httpx.TimeoutException:
+            raise ServiceUnavailableException("Wallet")
+        except httpx.HTTPStatusError:
+            raise
+        except httpx.RequestError:
+            raise ServiceUnavailableException("Wallet")
     
     async def _check_wallet_exists(self, user_id: int):
         """Check if wallet exists"""
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.wallet_service_url}/{user_id}",
-                timeout=10.0
-            )
-            response.raise_for_status()    
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.wallet_service_url}/{user_id}",
+                    timeout=10.0
+                )
+                response.raise_for_status()
+        except httpx.TimeoutException:
+            raise ServiceUnavailableException("Wallet")
+        except httpx.HTTPStatusError:
+            raise
+        except httpx.RequestError:
+            raise ServiceUnavailableException("Wallet")
         
-transaction_service = TransactionService()        
+transaction_service = TransactionService()

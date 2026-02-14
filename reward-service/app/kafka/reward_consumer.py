@@ -39,7 +39,7 @@ class RewardConsumer:
                 reward = Reward(
                     user_id=sender_id,
                     points=points,
-                    sent_at=datetime.utcnow(),
+                    # sent_at=datetime.utcnow(),
                     transaction_id=transaction_id
                 )
                 

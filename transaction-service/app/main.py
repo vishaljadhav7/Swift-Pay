@@ -8,7 +8,7 @@ from app.core.database import init_db, close_db
 from app.utils.kafka_client import KafkaProducerClient
 from app.services.transaction import transaction_service
 from app.controllers.transaction import router as transaction_router
-
+from app.middleware.exception_handler_middleware import register_exception_handlers
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,7 +59,7 @@ app.add_middleware(
 )
 
 # # Add global exception handler
-# app.add_middleware(ExceptionHandlerMiddleware)
+register_exception_handlers(app=app)
 
 # # Include routers
 app.include_router(transaction_router)

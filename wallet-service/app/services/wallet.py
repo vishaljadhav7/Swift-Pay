@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 import secrets
-from app.models.wallet import Wallet, WalletHold
+from app.models.wallet import Wallet, WalletHold, WalletStatuses
 from app.schemas.wallet import (
     CreateWalletRequest,
     CreditRequest,
@@ -11,7 +11,7 @@ from app.schemas.wallet import (
     WalletResponse,
     HoldResponse
 )
-
+        
 from app.repositories.wallet import wallet_repository
 
 from app.core.exceptions import (
@@ -39,8 +39,8 @@ class WalletService:
         wallet = Wallet(
             user_id=data.user_id,
             currency=data.currency,
-            balance=0,
-            available_balance=0
+            balance=500,
+            available_balance=500
         )
         created = await wallet_repository.create(db, wallet)
         return WalletResponse.from_orm(created)
@@ -98,7 +98,7 @@ class WalletService:
         logger.info(f" DEBIT done: wallet_id={wallet.id}, new_balance={wallet.balance}")
         return WalletResponse.from_orm(updated)
     
-    async def get_wallet(self, db: AsyncSession, user_id: int) -> WalletResponse:
+    async def get_wallet(self, db: AsyncSession, user_id: str) -> WalletResponse:
         """Get wallet by user ID"""
         wallet = await wallet_repository.get_by_user_id(db, user_id)
         if not wallet:
@@ -118,6 +118,7 @@ class WalletService:
         )
         if not wallet:
             raise WalletNotFoundException(data.user_id)
+    
         
         # Check sufficient available funds
         if wallet.available_balance < data.amount:
@@ -132,12 +133,15 @@ class WalletService:
         expires_at = datetime.utcnow() + timedelta(minutes=self.HOLD_EXPIRY_MINUTES)
         
         hold = WalletHold(
-            wallet_id=wallet.id,
             hold_reference=hold_reference,
             amount=data.amount,
-            status="ACTIVE",
+            status=WalletStatuses.ACTIVE,
             expires_at=expires_at
         )
+        
+
+        hold.wallet = wallet
+        
         created_hold = await wallet_repository.create_hold(db, hold)
         
         logger.info(f"Hold placed: {hold_reference}, expires_at={expires_at}")
@@ -159,7 +163,7 @@ class WalletService:
         if not hold:
             raise HoldNotFoundException(data.hold_reference)
         
-        if hold.status != "ACTIVE":
+        if hold.status != WalletStatuses.ACTIVE:
             raise BadRequestException(f"Hold is not active (status: {hold.status})")
         
         # Get wallet with lock
@@ -172,7 +176,7 @@ class WalletService:
         await wallet_repository.update(db, wallet)
         
         # Mark hold as captured
-        hold.status = "CAPTURED"
+        hold.status = WalletStatuses.CAPTURED
         await wallet_repository.update_hold(db, hold)
         
         logger.info(f"Hold captured: {data.hold_reference}")
@@ -189,7 +193,7 @@ class WalletService:
         if not hold:
             raise HoldNotFoundException(hold_reference)
         
-        if hold.status != "ACTIVE":
+        if hold.status != WalletStatuses.ACTIVE:
             raise BadRequestException(f"Hold is not active (status: {hold.status})")
         
         # Get wallet with lock
@@ -202,7 +206,7 @@ class WalletService:
         await wallet_repository.update(db, wallet)
         
         # Mark hold as released
-        hold.status = "RELEASED"
+        hold.status = WalletStatuses.RELEASED
         await wallet_repository.update_hold(db, hold)
         
         logger.info(f"Hold released: {hold_reference}")

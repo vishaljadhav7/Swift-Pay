@@ -43,10 +43,11 @@ async def debit_wallet(
 
 @router.get("/{user_id}", response_model=WalletResponse)
 async def get_wallet(
-    user_id: int = Path(..., gt=0),
+    user_id: str = Path(..., min_length=10),
     db: AsyncSession = Depends(get_db)
 ) -> WalletResponse:
     """Get wallet by user ID"""
+
     return await wallet_service.get_wallet(db, user_id)
 
 

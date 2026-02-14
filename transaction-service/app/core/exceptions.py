@@ -38,3 +38,10 @@ class ServiceUnavailableException(AppException):
             detail=f"{service_name} service is temporarily unavailable",
             status_code=503
         )        
+        
+class DuplicateTransactionException(AppException):
+    def __init__(self, idempotency_key: str):
+        super().__init__(
+            detail=f"Transaction with idempotency key '{idempotency_key}' has already been processed",
+            status_code=409
+        )        

@@ -17,19 +17,19 @@ class User(Base):
     __tablename__ = "app_user"
     
     id: Mapped[str] = mapped_column(
-        String(20), 
+        String(36), 
         default=lambda: str(uuid.uuid4()),
         primary_key=True,
         init=False
         )
     
     name: Mapped[str] = mapped_column(
-        String(20), 
+        String(100), 
         nullable=False
         )
     
     email: Mapped[str] = mapped_column(
-        String(20), 
+        String(255), 
         unique=True, 
         index=True,
         nullable=False
@@ -38,10 +38,10 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     
     role: Mapped[Roles] = mapped_column(
+        String(20),
         SQLEnum(Roles, values_callable=lambda enum: [e.value for e in enum], native_enum=False), 
         default=Roles.USER, 
-        nullable=False,
-        init=False
+        nullable=False
         )
     
     created_at : Mapped[datetime] = mapped_column(

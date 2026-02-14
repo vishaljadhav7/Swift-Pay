@@ -29,7 +29,7 @@ async def create_transaction(
             detail="Missing X-User-Id header from gateway"
         )
     
-    token_user_id = int(user_id_header)
+    token_user_id = str(user_id_header)
     request_sender_id = data.sender_id
     
     # Verify authorization: user can only send from their own account

@@ -75,15 +75,22 @@ class UserService:
         return [UserResponse.from_orm(user) for user in users]
     
     async def _create_wallet_for_user(self, user_id: str):
-        """Call wallet service to create wallet"""
-        wallet_data = WalletCreateRequest(user_id=user_id, currency="INR")
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                self.wallet_service_url,
-                json=wallet_data.dict(),
-                timeout=10.0
-            )
-            response.raise_for_status()
+       """Call wallet service to create wallet"""
+       try:
+           wallet_data = WalletCreateRequest(user_id=user_id, currency="INR")
+           
+           async with httpx.AsyncClient() as client:
+               response = await client.post(
+                   self.wallet_service_url,
+                   json=wallet_data.dict(),
+                   timeout=10.0
+               )
+               response.raise_for_status()
+       except httpx.TimeoutException:
+           raise ServiceUnavailableException("Wallet")
+       except httpx.HTTPStatusError:
+           raise ServiceUnavailableException("Wallet")
+       except httpx.RequestError:
+           raise ServiceUnavailableException("Wallet")
     
 user_service = UserService()

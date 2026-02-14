@@ -13,6 +13,16 @@ from app.core.dependencies import get_db
 router = APIRouter()
 
 
+@router.post("/auth/signup", status_code=200)
+async def signup(     
+    request: SignupRequest,
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Register a new user"""
+    message = await user_service.signup(db, request)
+    return {"message": message}
+    
+
 @router.post("/auth/login", response_model=TokenResponse)
 async def login(
     request: LoginRequest,

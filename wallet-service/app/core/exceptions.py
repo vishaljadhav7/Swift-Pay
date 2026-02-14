@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional
-
-
+       
 class AppException(Exception):
     """Base exception class for all application exceptions"""
     

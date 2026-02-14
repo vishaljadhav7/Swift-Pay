@@ -2,17 +2,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-
-
 from app.core.config import settings
 from app.middleware.auth_middleware import AuthMiddleware
 from app.middleware.rate_limiter_middleware import RateLimiter, RateLimiterMiddleware
 # from app.middleware.exception_handler import ExceptionHandlerMiddleware
 from app.services.proxy_service import proxy_service
 
-
-
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -56,6 +51,14 @@ async def root():
         "status": "running",
         "port": settings.SERVICE_PORT
     }
+    
+    
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def proxy(request: Request, path: str):
+    """
+    Proxy all requests to backend microservices
+    """
+    return await proxy_service.proxy_request(request)    
 
 
 

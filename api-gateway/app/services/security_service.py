@@ -12,7 +12,7 @@ class SecurityService:
     
     def decode_token(self, token: str) -> Dict[str, Any]:
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
             return payload
         except jwt.ExpiredSignatureError:
             raise InvalidTokenError("Token has expired")

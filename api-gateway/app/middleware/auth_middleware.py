@@ -41,7 +41,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request.state.role = role
             request.state.jti = jti
             
-            logger.info(f"✅ Authenticated user: {user_id} ({email})")
+            logger.info(f"Authenticated user: {user_id} ({email})")
             
             return await call_next(request)
         

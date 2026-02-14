@@ -59,7 +59,7 @@ class HoldExpiryScheduler:
             try:
                 count = await wallet_service.release_expired_holds(db)
                 if count > 0:
-                    logger.info(f"🔄 Released {count} expired hold(s)")
+                    logger.info(f"Released {count} expired hold(s)")
             except Exception as e:
                 logger.error(f"Failed to release expired holds: {e}")
 

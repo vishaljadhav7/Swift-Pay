@@ -18,14 +18,14 @@ class Wallet(Base):
     __tablename__ = "wallets"
     
     id: Mapped[str] = mapped_column(
-        String(20), 
+        String(36), 
         default=lambda: str(uuid.uuid4()),
         primary_key=True,
         init=False
         )
     
     user_id: Mapped[str] = mapped_column(
-        String(50),
+        String(36),
         unique=True, 
         nullable=False, 
         index=True
@@ -65,7 +65,7 @@ class WalletHold(Base):
     __tablename__ = "wallet_holds"
     
     id: Mapped[str] = mapped_column(
-        String(20), 
+        String(36), 
         default=lambda: str(uuid.uuid4()),
         primary_key=True,
         init=False
@@ -73,8 +73,10 @@ class WalletHold(Base):
     
     
     wallet_id: Mapped[str] = mapped_column(
+        String(36),
         ForeignKey("wallets.id"), 
-        nullable=False
+        nullable=False,
+        init=False 
     )
     
     hold_reference: Mapped[str] = mapped_column(
@@ -102,7 +104,7 @@ class WalletHold(Base):
     
     
     # Relationships
-    wallet: Mapped["Wallet"] = relationship(back_populates="holds", default=None)
+    wallet: Mapped["Wallet"] = relationship(back_populates="holds", default=None, init=False)
     
     def __repr__(self):
         return f"<WalletHold(id={self.id}, reference={self.hold_reference}, status={self.status})>"    
