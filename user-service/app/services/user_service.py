@@ -1,7 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Tuple, List
+import logging
 from app.schemas.user import  LoginRequest,  UserResponse, WalletCreateRequest, SignupRequest
 from app.models.user import User, Roles
+from hyx.circuitbreaker import consecutive_breaker
 from app.repositories.user import user_repository
 from app.services.security_service import security_service
 from app.core.exceptions import (
@@ -11,11 +13,17 @@ from app.core.exceptions import (
 )
 import httpx
 
+logger = logging.getLogger(__name__)
 
 class UserService:
     
     def __init__(self):
         self.wallet_service_url = "http://localhost:8088/api/v1/wallets"
+        
+        self.wallet_breaker = consecutive_breaker(
+            failure_threshold=5,
+            recovery_time_secs=30,
+        )
         
         
     async def signup(self, db: AsyncSession, data: SignupRequest) -> str:
@@ -75,22 +83,21 @@ class UserService:
         return [UserResponse.from_orm(user) for user in users]
     
     async def _create_wallet_for_user(self, user_id: str):
-       """Call wallet service to create wallet"""
-       try:
-           wallet_data = WalletCreateRequest(user_id=user_id, currency="INR")
-           
-           async with httpx.AsyncClient() as client:
-               response = await client.post(
-                   self.wallet_service_url,
-                   json=wallet_data.dict(),
-                   timeout=10.0
-               )
-               response.raise_for_status()
-       except httpx.TimeoutException:
-           raise ServiceUnavailableException("Wallet")
-       except httpx.HTTPStatusError:
-           raise ServiceUnavailableException("Wallet")
-       except httpx.RequestError:
-           raise ServiceUnavailableException("Wallet")
+        async def create_wallet():
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.wallet_service_url,
+                    json={"user_id": user_id, "currency": "INR"},
+                    timeout=10.0
+                )
+                response.raise_for_status()
+
+        try:
+            async with self.wallet_breaker:
+                await create_wallet()
+        except Exception as e:
+            logger.error(f"Wallet creation failed for user {user_id}: {e}")
+            raise ServiceUnavailableException("Wallet")
+    
     
 user_service = UserService()

@@ -9,6 +9,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "fastapi>=0.128.0",
     "httpx>=0.28.1",
+    "hyx>=0.0.2",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
     "python-multipart>=0.0.21",

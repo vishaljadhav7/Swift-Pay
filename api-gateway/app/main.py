@@ -5,7 +5,7 @@ import logging
 from app.core.config import settings
 from app.middleware.auth_middleware import AuthMiddleware
 from app.middleware.rate_limiter_middleware import RateLimiter, RateLimiterMiddleware
-# from app.middleware.exception_handler import ExceptionHandlerMiddleware
+from app.middleware.exception_handler_middleware import register_exception_handlers
 from app.services.proxy_service import proxy_service
 
 logging.basicConfig(
@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 # Add global exception handler
-# app.add_middleware(ExceptionHandlerMiddleware)
+register_exception_handlers(app)
 
 
 rate_limiter = RateLimiter(

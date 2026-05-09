@@ -11,7 +11,7 @@ class ProxyService:
     SERVICE_ROUTES = {
         "/auth": "http://localhost:8081",
         "/api/users": "http://localhost:8081",
-        "/api/transactions": "http://localhost:8082",
+        "/api/transactions": "http://localhost:8082",     
         "/api/wallets": "http://localhost:8088",
         "/api/notify": "http://localhost:8084",
         "/api/rewards": "http://localhost:8089",
