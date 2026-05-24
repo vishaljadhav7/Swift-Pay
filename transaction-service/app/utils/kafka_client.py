@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class KafkaProducerClient:
     """Async Kafka Producer wrapper"""
     
-    def __init__(self, bootstrap_servers: str = "localhost:9092"):
+    def __init__(self, bootstrap_servers: str = "kafka:9092"):
         self.bootstrap_servers = bootstrap_servers
         self.producer: AIOKafkaProducer | None = None
     

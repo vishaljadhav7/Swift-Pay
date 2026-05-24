@@ -22,7 +22,7 @@ class TransactionService:
     """Handles transaction orchestration"""
     
     def __init__(self):
-        self.wallet_service_url = "http://localhost:8088/api/v1/wallets"
+        self.wallet_service_url = "http://wallet-service:8088/api/v1/wallets"
         self.kafka_producer: KafkaProducerClient | None = None
         
         self.wallet_breaker = consecutive_breaker(

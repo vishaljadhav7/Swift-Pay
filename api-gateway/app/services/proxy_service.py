@@ -1,6 +1,7 @@
 import httpx
 from fastapi import Request, Response
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -9,13 +10,13 @@ class ProxyService:
          
     # Service registry
     SERVICE_ROUTES = {
-        "/auth": "http://localhost:8081",
-        "/api/users": "http://localhost:8081",
-        "/api/transactions": "http://localhost:8082",     
-        "/api/wallets": "http://localhost:8088",
-        "/api/notify": "http://localhost:8084",
-        "/api/rewards": "http://localhost:8089",
-    }    
+    "/auth":             settings.USER_SERVICE_URL,
+    "/api/users":        settings.USER_SERVICE_URL,
+    "/api/wallets":      settings.WALLET_SERVICE_URL,
+    "/api/transactions": settings.TRANSACTION_SERVICE_URL,
+    "/api/notify":       settings.NOTIFICATION_SERVICE_URL,
+    "/api/rewards":      settings.REWARD_SERVICE_URL,
+}    
     
     
     async def proxy_request(self, request: Request) -> Response:

@@ -10,10 +10,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str 
     
     # Wallet Service
-    WALLET_SERVICE_URL: str = "http://localhost:8088"
+    WALLET_SERVICE_URL: str = "http://wallet-service:8088"
     
     # Kafka
-    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    KAFKA_BOOTSTRAP_SERVERS: str = "kafka:9092"
     KAFKA_TOPIC: str = "txn-initiated"
     
     class Config:

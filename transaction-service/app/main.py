@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # Kafka producer
-kafka_producer = KafkaProducerClient(bootstrap_servers="localhost:9092")
+kafka_producer = KafkaProducerClient(bootstrap_servers="kafka:9092")
 
 
 @asynccontextmanager

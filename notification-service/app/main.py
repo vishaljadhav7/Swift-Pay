@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 kafka_consumer = KafkaConsumerClient(
     topic="txn-initiated",
     group_id="notification-group",
-    bootstrap_servers="localhost:9092"
+    bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS
 )
 
 

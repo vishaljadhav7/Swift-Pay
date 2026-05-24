@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class UserService:
     
     def __init__(self):
-        self.wallet_service_url = "http://localhost:8088/api/v1/wallets"
+        self.wallet_service_url = "http://wallet-service:8088/api/v1/wallets"
         
         self.wallet_breaker = consecutive_breaker(
             failure_threshold=5,

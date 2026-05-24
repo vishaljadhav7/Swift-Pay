@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str 
     
     # Kafka
-    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    KAFKA_BOOTSTRAP_SERVERS: str = "kafka:9092"
     KAFKA_TOPIC: str = "txn-initiated"
     
     class Config:
