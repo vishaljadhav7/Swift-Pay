@@ -1,6 +1,6 @@
-# RazorSwiftPay
+# SwiftPay
 
-A Razorpay-inspired payment backend built with a microservices architecture. Handles user auth, wallet operations, money transfers, and event-driven rewards/notifications.
+A SwiftPay-inspired payment backend built with a microservices architecture. Handles user auth, wallet operations, money transfers, and event-driven rewards/notifications.
 
 ---
 
@@ -17,7 +17,7 @@ Client
         ├── Notification Service (8003)
         └── Reward Service (8004)
 
-Transaction Service ──► Kafka (txn-initiated)──► Notification Service
+Transaction Service ──>Kafka (txn-initiated)──► Notification Service
                                             └──► Reward Service
 ```
 
@@ -101,32 +101,69 @@ Gateway is available at `http://localhost:8000`.
 All requests go through the gateway at port `8000`. Routes prefixed with 🔒 require a `Bearer` token.
 
 ### Auth
+
+`POST /auth/signup` — Register a new user
+```json
+{ "name": "string", "email": "user@example.com", "password": "string", "admin_key": "optional" }
 ```
-POST   /auth/signup          Register a new user
-POST   /auth/login           Returns JWT access token
+
+`POST /auth/login` — Returns JWT access token
+```json
+{ "email": "user@example.com", "password": "string" }
 ```
 
 ### Users
 ```
-GET    /api/users/{user_id}  Get user profile
+GET    /api/users/{user_id}    Get user profile
 ```
 
 ### Wallets
+
+> Wallet service routes are prefixed `/api/v1/wallets`
+
 ```
-GET    /api/wallets/{user_id}         Get wallet balance
-POST   /api/wallets                   Create wallet
-POST   /api/wallets/credit            Credit funds
-POST   /api/wallets/debit             Debit funds
-POST   /api/wallets/hold              Place a hold on funds
-POST   /api/wallets/capture           Capture a hold (finalise debit)
-POST   /api/wallets/release/{ref}     Release a hold
+GET    /api/v1/wallets/{user_id}         Get wallet balance
+```
+
+`POST /api/v1/wallets` — Create wallet
+```json
+{ "user_id": "string", "currency": "INR" }
+```
+
+`POST /api/v1/wallets/credit` — Credit funds
+```json
+{ "user_id": "string", "currency": "INR", "amount": 1000 }
+```
+
+`POST /api/v1/wallets/debit` — Debit funds
+```json
+{ "user_id": "string", "currency": "INR", "amount": 1000 }
+```
+
+`POST /api/v1/wallets/hold` — Place a hold on funds
+```json
+{ "user_id": "string", "currency": "INR", "amount": 1000 }
+```
+
+`POST /api/v1/wallets/capture` — Capture a hold (finalise debit)
+```json
+{ "hold_reference": "HOLD-..." }
+```
+
+```
+POST   /api/v1/wallets/release/{hold_reference}    Release a hold (no body)
 ```
 
 ### Transactions 🔒
+
+`POST /api/transactions/create` — Initiate a money transfer
+```json
+{ "sender_id": "string", "receiver_id": "string", "amount": 100.0, "idempotency_key": "unique-string" }
 ```
-POST   /api/transactions/create            Initiate a money transfer
-GET    /api/transactions/{id}              Get transaction by ID
-GET    /api/transactions/user/{user_id}    Get all transactions for a user
+
+```
+GET    /api/transactions/{transaction_id}      Get transaction by ID
+GET    /api/transactions/user/{user_id}        Get all transactions for a user
 ```
 
 ### Rewards 🔒
@@ -136,9 +173,14 @@ GET    /api/rewards/user/{user_id}     Rewards for a specific user
 ```
 
 ### Notifications 🔒
+
+`POST /api/notify` — Send a manual notification
+```json
+{ "user_id": "string", "message": "string" }
+```
+
 ```
 GET    /api/notify/{user_id}    Get notifications for a user
-POST   /api/notify              Send a manual notification
 ```
 
 ---
