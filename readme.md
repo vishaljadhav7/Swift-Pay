@@ -10,15 +10,26 @@ Six independent services communicate over HTTP and Kafka, each with its own Post
 
 ```
 Client
-  └── API Gateway (8000)
-        ├── User Service (8001)
-        ├── Wallet Service (8088)
-        ├── Transaction Service (8002)
-        ├── Notification Service (8003)
-        └── Reward Service (8004)
-
-Transaction Service ──>Kafka (txn-initiated)──► Notification Service
-                                            └──► Reward Service
+  │
+  ▼
+API Gateway (Port 8000)
+- JWT Authentication
+- Rate Limiting
+- Routing
+  │
+  ├──► User Service (8001) ──────── PostgreSQL
+  ├──► Wallet Service (8088) ────── PostgreSQL
+  ├──► Transaction Service (8002) ── PostgreSQL
+  │        │
+  │        │ (hyx circuit breaker on all wallet calls)
+  │        │
+  │        ▼
+  │   Wallet Service (hold/capture/release)
+  │
+  │ Publish Kafka event (txn-initiated)
+  │        │
+  │        ├──► Notification Service (8003) ── PostgreSQL
+  │        └──► Reward Service (8004) ──────── PostgreSQL
 ```
 
 ---
