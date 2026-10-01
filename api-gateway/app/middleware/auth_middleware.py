@@ -12,16 +12,16 @@ logger = logging.getLogger(__name__)
 class AuthMiddleware(BaseHTTPMiddleware):
     """Authentication middleware for protected routes"""
     
-    def __init__(self, app, protected_paths: Optional[list] = None):
+    def __init__(self, app, public_paths: Optional[list] = None):
         super().__init__(app)
-        self.protected_paths = protected_paths or []    
+        self.public_paths = set(public_paths or [])   
 
     async def dispatch(self, request, call_next : Callable):
         
         if request.method == "OPTIONS":
             return Response(status_code=200)
         
-        if not self._is_protected_path(request.url.path):
+        if self._is_public_path(request.url.path):
             return await call_next(request)
         
         try:
@@ -62,9 +62,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
              
 
 
-    def _is_protected_path(self, path: str) -> bool:
-        """Check if path requires authentication"""
-        for protected_path in self.protected_paths:
-            if path.startswith(protected_path):
-                return True
-        return False
+    def _is_public_path(self, path: str) -> bool:
+        """Exact match, ignoring a trailing slash, so '/' can never match everything."""
+        return (path.rstrip("/") or "/") in self.public_paths

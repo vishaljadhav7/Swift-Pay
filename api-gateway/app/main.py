@@ -40,7 +40,7 @@ rate_limiter = RateLimiter(
 
 app.add_middleware(RateLimiterMiddleware, rate_limiter=rate_limiter)
 
-app.add_middleware(AuthMiddleware, protected_paths=settings.PROTECTED_PATHS)
+app.add_middleware(AuthMiddleware, public_paths=settings.PUBLIC_PATHS)
 
 
 @app.get("/")

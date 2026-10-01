@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     RATE_LIMIT_REPLENISH_RATE: int = 10  # requests per minute
     RATE_LIMIT_BURST_CAPACITY: int = 20
     
+    PUBLIC_PATHS: list = [
+    "/",              # health check
+    "/auth/login",
+    "/auth/signup",
+    ]
+    
     # Protected paths
     PROTECTED_PATHS: list = [
         "/api/transactions",

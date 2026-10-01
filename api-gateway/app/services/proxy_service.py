@@ -5,6 +5,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+IDENTITY_HEADERS = {"x-user-id", "x-user-email", "x-user-role"}
 class ProxyService:
     """Handles proxying requests to backend services"""
          
@@ -32,7 +33,10 @@ class ProxyService:
         if request.url.query:
             full_url = f"{full_url}?{request.url.query}"
             
-        headers = dict(request.headers)    
+        headers = {
+            k: v for k, v in request.headers.items()
+            if k.lower() not in IDENTITY_HEADERS and k.lower() != "authorization"
+        }
         
         if hasattr(request.state, "user_id"):
             headers["X-User-Id"] = str(request.state.user_id)

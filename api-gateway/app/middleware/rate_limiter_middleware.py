@@ -52,8 +52,8 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable):
         """Process the request with rate limiting"""
                 
-        user_id = request.headers.get("X-User-Id")
-        key = user_id if user_id else request.client.host
+        user_id = getattr(request.state, "user_id", None)
+        key = user_id or request.client.host
         
         
         # Check rate limit
