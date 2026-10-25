@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from contextlib import asynccontextmanager
 import logging
+from app.core.seed import seed_admin
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.controllers.user import router as user_router
@@ -23,7 +24,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.SERVICE_NAME}...")
     await init_db()
     logger.info("Database initialized")
-    
+    await seed_admin()
     yield
     # Shutdown
     logger.info("Shutting down...")

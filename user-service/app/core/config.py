@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     
     DATABASE_URL: str 
     
+    ADMIN_EMAIL: str | None = None
+    ADMIN_PASSWORD: str | None = None
+    
     WALLET_SERVICE_URL: str = "http://wallet-service:8088"
     
     SECRET_KEY : str  = Field(min_length=43)

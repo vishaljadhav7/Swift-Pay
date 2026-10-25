@@ -4,8 +4,6 @@ import logging
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-IDENTITY_HEADERS = {"x-user-id", "x-user-email", "x-user-role"}
 class ProxyService:
     """Handles proxying requests to backend services"""
          
@@ -32,11 +30,9 @@ class ProxyService:
         full_url = f"{target_url}{request.url.path}"
         if request.url.query:
             full_url = f"{full_url}?{request.url.query}"
-            
-        headers = {
-            k: v for k, v in request.headers.items()
-            if k.lower() not in IDENTITY_HEADERS and k.lower() != "authorization"
-        }
+        
+        # never trust identity headers sent by the client; set them only from the verified token
+        headers = {k: v for k, v in request.headers.items() if not k.lower().startswith("x-user-")}
         
         if hasattr(request.state, "user_id"):
             headers["X-User-Id"] = str(request.state.user_id)

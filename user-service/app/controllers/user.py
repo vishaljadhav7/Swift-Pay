@@ -9,6 +9,7 @@ from app.schemas.user import (
 )
 from app.services.user_service import user_service
 from app.core.dependencies import get_db
+from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
 
 router = APIRouter()
 
@@ -35,8 +36,10 @@ async def login(
 
 @router.get("/api/users/{user_id}", response_model=UserResponse)
 async def get_user_by_id(
-    user_id: int,
+    user_id: str,
+    user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> UserResponse:
-    """Get user by ID"""
+    """Get user by ID (the user themselves, or an admin)"""
+    ensure_owner_or_admin(user, user_id)
     return await user_service.get_user_by_id(db, user_id)

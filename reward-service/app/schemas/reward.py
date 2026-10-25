@@ -4,11 +4,11 @@ from datetime import datetime
 
 class RewardResponse(BaseModel):
     """Reward response model"""
-    id: int
-    user_id: int
+    id: str
+    user_id: str
     points: float
     sent_at: datetime
-    transaction_id: int
+    transaction_id: str
     
     class Config:
         from_attributes = True
