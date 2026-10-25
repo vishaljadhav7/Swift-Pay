@@ -38,10 +38,19 @@ rate_limiter = RateLimiter(
     burst_capacity=settings.RATE_LIMIT_BURST_CAPACITY
 )
 
+
+
+# Starlette runs the LAST added middleware FIRST.
+# A request goes: CORS -> Auth -> Rate limit -> proxy
 app.add_middleware(RateLimiterMiddleware, rate_limiter=rate_limiter)
-
 app.add_middleware(AuthMiddleware, public_paths=settings.PUBLIC_PATHS)
-
+app.add_middleware(
+    CORSMiddleware,                                   # outermost, so it can answer browser preflight (OPTIONS)
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,      # explicit list, no "*"
+    allow_credentials=False,                          # Authorization header, not cookies
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 @app.get("/")
 async def root():

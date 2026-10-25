@@ -1,33 +1,33 @@
-from typing import Tuple, Dict, Any
-from passlib.context import CryptContext
+from typing import Dict, Any
 import jwt 
+import logging
 from app.core.exceptions import InvalidTokenError
 from app.core.config import settings
  
+logger = logging.getLogger(__name__) 
+ 
 class SecurityService:
-    """Handles password hashing and JWT operations"""
-    
-    def __init__(self):
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    """Verifies JWT access tokens"""
+
     def decode_token(self, token: str) -> Dict[str, Any]:
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
-            return payload
-        except jwt.ExpiredSignatureError:
-            raise InvalidTokenError("Token has expired")
+            return jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=[settings.ALGORITHM],          # the token cannot choose its algorithm
+                audience=settings.JWT_AUDIENCE,
+                issuer=settings.JWT_ISSUER,
+                options={"require": ["exp", "iat", "sub", "iss", "aud", "role"]},
+            )
         except jwt.InvalidTokenError as e:
-            raise InvalidTokenError(f"Invalid token: {str(e)}")
-        
-    def extract_token_from_header(self, authorization : str | None) -> str:
-        if not authorization:
-            raise InvalidTokenError("Missing Authorization header")
-        
-        parts = authorization.split()
+            logger.warning("Rejected token: %s", type(e).__name__)   # reason stays in the log
+            raise InvalidTokenError("Invalid or expired token", invalid_token=True)
+
+    def extract_token_from_header(self, authorization: str | None) -> str:
+        parts = authorization.split() if authorization else []
         if len(parts) != 2 or parts[0].lower() != "bearer":
-            raise InvalidTokenError("Invalid Authorization header format")
-        
-        return parts[1]   
+            raise InvalidTokenError("Authentication required")
+        return parts[1]
     
 security_service = SecurityService()
     

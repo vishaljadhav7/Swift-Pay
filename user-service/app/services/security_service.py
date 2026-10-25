@@ -1,8 +1,6 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
-from passlib.context import CryptContext
-from passlib.exc import UnknownHashError
 import jwt
 import bcrypt
 from app.core.config import settings
@@ -14,9 +12,6 @@ BCRYPT_MAX_BYTES = 72
 class SecurityService:
     """Handles password hashing and JWT operations"""
     
-    def __init__(self):
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
     def hash_password(self, password: str) -> str:
         """Hash with bcrypt (CPU heavy: call it with asyncio.to_thread from async code)"""
         return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=BCRYPT_ROUNDS)).decode("ascii")

@@ -17,5 +17,6 @@ class AppException(Exception):
         
         
 class InvalidTokenError(AppException):
-    def __init__(self, detail: str = "Invalid or expired token"):
-        super().__init__(detail=detail, status_code=401)        
+    def __init__(self, detail: str = "Authentication required", invalid_token: bool = False):
+        challenge = 'Bearer error="invalid_token"' if invalid_token else "Bearer"
+        super().__init__(detail=detail, status_code=401, headers={"WWW-Authenticate": challenge})

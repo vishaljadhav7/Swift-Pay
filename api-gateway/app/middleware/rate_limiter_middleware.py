@@ -42,27 +42,23 @@ class RateLimiter:
         return False
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):
-        
-    """Rate limiter middleware"""
-    
+    """Rate limiter middleware (runs after AuthMiddleware)"""
+
     def __init__(self, app, rate_limiter: RateLimiter):
         super().__init__(app)
         self.rate_limiter = rate_limiter
-        
+
     async def dispatch(self, request: Request, call_next: Callable):
-        """Process the request with rate limiting"""
-                
+        # user_id comes from the verified token (set by AuthMiddleware), never from a request header
         user_id = getattr(request.state, "user_id", None)
-        key = user_id or request.client.host
-        
-        
-        # Check rate limit
+        ip = request.client.host if request.client else "unknown"
+        key = f"user:{user_id}" if user_id else f"ip:{ip}"
+
         if not self.rate_limiter.is_allowed(key):
             logger.warning(f"Rate limit exceeded for key: {key}")
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Too many requests"}
+                content={"detail": "Too many requests"},
+                headers={"Retry-After": "60"},
             )
         return await call_next(request)
-    
-    
