@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Tuple, List
 import logging
+import asyncio
 from app.schemas.user import  LoginRequest,  UserResponse, WalletCreateRequest, SignupRequest
 from app.models.user import User, Roles
 from hyx.circuitbreaker import consecutive_breaker
@@ -32,7 +33,7 @@ class UserService:
         Returns success message with user ID
         """
         # Hash password
-        hashed_password = security_service.hash_password(data.password)
+        hashed_password = await asyncio.to_thread(security_service.hash_password, data.password)
         
         # Create user
         user = User(
@@ -54,20 +55,18 @@ class UserService:
         return f"User registered successfully with ID: {created_user.id}"        
     
     async def login(self, db: AsyncSession, credentials: LoginRequest) -> Tuple[str, str]:
-        
         user = await user_repository.get_by_email(db, credentials.email)
-        if not user:
+
+        # bcrypt is CPU heavy: run it in a thread so the event loop stays free
+        if not user or not await asyncio.to_thread(
+            security_service.verify_password, credentials.password, user.password
+        ):
             raise InvalidCredentialsError()
-        
-        if not security_service.verify_password(credentials.password, user.password):
-            raise InvalidCredentialsError()
-        
+
         access_token, jti, expires_in = security_service.create_access_token(
             user_id=user.id,
-            email=user.email,
             role=user.role
         )
-        
         return access_token, "bearer"
     
     async def get_user_by_id(self, db: AsyncSession, user_id: str) -> UserResponse:

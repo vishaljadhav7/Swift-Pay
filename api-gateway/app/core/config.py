@@ -16,20 +16,17 @@ class Settings(BaseSettings):
     REWARD_SERVICE_URL: str      = "http://reward-service:8004"
     
     # Rate Limiting
-    RATE_LIMIT_REPLENISH_RATE: int = 10  # requests per minute
-    RATE_LIMIT_BURST_CAPACITY: int = 20
+    AUTH_RATE_LIMIT_REPLENISH_RATE: int = 5
+    AUTH_RATE_LIMIT_BURST_CAPACITY: int = 5
     
-    PUBLIC_PATHS: list = [
-    "/",              # health check
-    "/auth/login",
-    "/auth/signup",
-    ]
+    PUBLIC_PATHS: list[str] = ["/", "/docs", "/openapi.json", "/auth/login", "/auth/signup"]
     
     # Protected paths
     PROTECTED_PATHS: list = [
-        "/api/transactions",
-        "/api/rewards",
-        "/api/notify"
+    "/api/transactions",
+    "/api/rewards",
+    "/api/notify",
+    "/api/users"
     ]
     
     SECRET_KEY : str  

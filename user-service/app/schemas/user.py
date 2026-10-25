@@ -1,19 +1,31 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from typing import Optional
+
+PASSWORD_MIN_LENGTH = 15    # NIST SP 800-63B-4: password used as the only factor
+PASSWORD_MAX_LENGTH = 64    # NIST: allow at least 64
+BCRYPT_MAX_BYTES = 72       # bcrypt cannot use more
+MIN_UNIQUE_CHARS = 6        # rejects repeats like 'aaaaaaaaaaaaaaa' or 'abababababababab'
 
 class SignupRequest(BaseModel):
     """User signup request"""
     name: str = Field(..., min_length=1, max_length=20)
     email: EmailStr
-    password: str = Field(..., min_length=6, max_length=20)
-    admin_key: Optional[str] = None
-    
-    
+    password: str = Field(..., min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+
+    @field_validator("password")
+    @classmethod
+    def check_password(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > BCRYPT_MAX_BYTES:
+            raise ValueError("Password is too long (maximum 72 bytes)")
+        if len(set(v)) < MIN_UNIQUE_CHARS:
+            raise ValueError("Password is too repetitive (use at least 6 different characters)")
+        return v
+        
 class LoginRequest(BaseModel):
-    """User login request"""
+    """No password policy at login: the hash comparison decides"""
     email: EmailStr
-    password: str = Field(..., min_length=6, max_length=20)
+    password: str = Field(..., min_length=1, max_length=128)
     
 class UserResponse(BaseModel):
     """User response model"""

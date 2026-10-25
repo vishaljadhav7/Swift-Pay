@@ -1,11 +1,12 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
 from contextlib import asynccontextmanager
 import logging
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.controllers.user import router as user_router
-
+from fastapi.responses import JSONResponse
+from app.core.exceptions import AppException
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,18 +39,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
-# Add global exception handler
-# app.add_middleware(ExceptionHandlerMiddleware)
+
+# global exception handler
+@app.exception_handler(AppException)
+async def app_exception_handler(request, exc: AppException):
+    if exc.status_code == 500:   # repository errors carry raw DB error text: log it, don't return it
+        logger.error("App exception on %s: %s", request.url.path, exc.detail)
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=exc.headers)
 
 # Include routers
 app.include_router(user_router)

@@ -43,7 +43,7 @@ async def create_transaction(
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)
 async def get_transaction_by_id(
-    transaction_id: int,
+    transaction_id: str,
     db: AsyncSession = Depends(get_db)
 ) -> TransactionResponse:
     """Get transaction by ID"""

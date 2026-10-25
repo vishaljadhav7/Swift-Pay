@@ -1,12 +1,15 @@
 import secrets
-from datetime import datetime, timedelta
-from typing import Tuple, Dict, Any
+from datetime import datetime, timedelta, timezone
+from typing import Tuple
 from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
 import jwt
+import bcrypt
 from app.core.config import settings
 from app.core.exceptions import AppException
 
+BCRYPT_ROUNDS = 12        
+BCRYPT_MAX_BYTES = 72
 
 class SecurityService:
     """Handles password hashing and JWT operations"""
@@ -15,44 +18,33 @@ class SecurityService:
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     def hash_password(self, password: str) -> str:
-        """Hash a password using bcrypt"""
-        try:
-            return self.pwd_context.hash(password)
-        except Exception as e:
-            raise AppException(f"Password hashing failed: {str(e)}", status_code=500)
+        """Hash with bcrypt (CPU heavy: call it with asyncio.to_thread from async code)"""
+        return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=BCRYPT_ROUNDS)).decode("ascii")
     
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        """Verify a password against its hash"""
+        pw = plain_password.encode("utf-8")
+        if len(pw) > BCRYPT_MAX_BYTES:       # signup never accepts such a password, so it cannot match
+            return False
         try:
-            return self.pwd_context.verify(plain_password, hashed_password)
-        except UnknownHashError:
-            # Invalid hash format in database
+            return bcrypt.checkpw(pw, hashed_password.encode("ascii"))
+        except ValueError:
             raise AppException("Invalid password hash format", status_code=500)
-        except Exception as e:
-            raise AppException(f"Password verification failed: {str(e)}", status_code=500)
     
-    def create_access_token(self, user_id: str, email: str, role: str) -> Tuple:
-        """Create a JWT access token"""
-        try:
-            jti = secrets.token_urlsafe(32)
-            issued_at = datetime.utcnow()
-            expires_at = issued_at + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            expires_in_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-            
-            payload = {
-                "sub": email,
-                "userId": user_id,
-                "role": role,
-                "jti": jti,
-                "iat": int(issued_at.timestamp()),
-                "exp": int(expires_at.timestamp())
-            }
-            
-            token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-            
-            return token, jti, expires_in_seconds
-        except Exception as e:
-            raise AppException(f"Token generation failed: {str(e)}", status_code=500)
+    def create_access_token(self, user_id: str, role: str) -> Tuple[str, str, int]:
+        now = datetime.now(timezone.utc)                  
+        jti = secrets.token_urlsafe(32)
+        expires_in_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        payload = {
+            "iss": settings.JWT_ISSUER,
+            "aud": settings.JWT_AUDIENCE,
+            "sub": user_id,   
+            "role": role,
+            "jti": jti,
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(seconds=expires_in_seconds)).timestamp()),
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return token, jti, expires_in_seconds
     
 
 security_service = SecurityService()
