@@ -9,9 +9,9 @@ class ProxyService:
          
     # Service registry
     SERVICE_ROUTES = {
-    "/api/v1/auth":             settings.USER_SERVICE_URL,
+    "/api/v1/auth":         settings.USER_SERVICE_URL,
     "/api/v1/users":        settings.USER_SERVICE_URL,
-    "/api/v1/wallets":      settings.WALLET_SERVICE_URL,
+    "/api/wallets":         settings.WALLET_SERVICE_URL,
     "/api/v1/transactions": settings.TRANSACTION_SERVICE_URL,
     "/api/v1/notify":       settings.NOTIFICATION_SERVICE_URL,
     "/api/v1/rewards":      settings.REWARD_SERVICE_URL,

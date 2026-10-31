@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.controller.wallet import router as wallet_router
+from app.controller.wallet_public import router as wallet_public_router
 from app.core.database import init_db, close_db
 from app.core.config import settings
 from app.tasks.hold_expiry_scheduler import hold_expiry_scheduler
@@ -50,6 +51,7 @@ register_exception_handlers(app)
 # # Include routers
 app.include_router(wallet_router)
 
+app.include_router(wallet_public_router)
 
 @app.get("/")
 async def root():
