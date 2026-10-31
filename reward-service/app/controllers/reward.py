@@ -7,7 +7,7 @@ from app.services.reward import reward_service
 from app.core.dependencies import get_db
 
 
-router = APIRouter(prefix="/api/rewards", tags=["Reward"])
+router = APIRouter(prefix="/api/v1/rewards", tags=["Reward"])
 
 
 @router.get("", response_model=List[RewardResponse])

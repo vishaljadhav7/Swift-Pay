@@ -1,14 +1,16 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from datetime import datetime
 from typing import Optional
 
-PASSWORD_MIN_LENGTH = 15    # NIST SP 800-63B-4: password used as the only factor
-PASSWORD_MAX_LENGTH = 64    # NIST: allow at least 64
+PASSWORD_MIN_LENGTH = 15    # password used as the only factor
+PASSWORD_MAX_LENGTH = 64    # allow at least 64
 BCRYPT_MAX_BYTES = 72       # bcrypt cannot use more
-MIN_UNIQUE_CHARS = 6        # rejects repeats like 'aaaaaaaaaaaaaaa' or 'abababababababab'
-
+MIN_UNIQUE_CHARS = 6        # rejects repeating characters 
+ 
 class SignupRequest(BaseModel):
     """User signup request"""
+    model_config = ConfigDict(extra="forbid")     # reject unknown fields such as "role"
+    
     name: str = Field(..., min_length=1, max_length=20)
     email: EmailStr
     password: str = Field(..., min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)

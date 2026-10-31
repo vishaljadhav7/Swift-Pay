@@ -9,11 +9,11 @@ from app.core.dependencies import get_db
 from app.core.exceptions import ForbiddenException
 from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
 
-router = APIRouter(prefix="/api/transactions", tags=["Transaction"])
+router = APIRouter(prefix="/api/v1/transactions", tags=["Transaction"])
 
 
 
-@router.post("/create", response_model=TransactionResponse)
+@router.post("", response_model=TransactionResponse)
 async def create_transaction(
     request: Request,
     data: TransactionCreateRequest,

@@ -9,12 +9,12 @@ class ProxyService:
          
     # Service registry
     SERVICE_ROUTES = {
-    "/auth":             settings.USER_SERVICE_URL,
-    "/api/users":        settings.USER_SERVICE_URL,
-    "/api/wallets":      settings.WALLET_SERVICE_URL,
-    "/api/transactions": settings.TRANSACTION_SERVICE_URL,
-    "/api/notify":       settings.NOTIFICATION_SERVICE_URL,
-    "/api/rewards":      settings.REWARD_SERVICE_URL,
+    "/api/v1/auth":             settings.USER_SERVICE_URL,
+    "/api/v1/users":        settings.USER_SERVICE_URL,
+    "/api/v1/wallets":      settings.WALLET_SERVICE_URL,
+    "/api/v1/transactions": settings.TRANSACTION_SERVICE_URL,
+    "/api/v1/notify":       settings.NOTIFICATION_SERVICE_URL,
+    "/api/v1/rewards":      settings.REWARD_SERVICE_URL,
 }    
     
     
@@ -23,7 +23,7 @@ class ProxyService:
         Proxy the request to the appropriate backend service
         """
         target_url = self._get_target_url(request.url.path)
-        
+         
         if not target_url:
             return Response(content="Service not found", status_code=404)
         

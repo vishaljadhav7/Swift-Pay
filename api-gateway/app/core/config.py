@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Deny by default: only these exact paths work without a token.
     # ("/docs" and "/openapi.json" are for development only; remove them in production.)
-    PUBLIC_PATHS: list[str] = ["/", "/docs", "/openapi.json", "/auth/login", "/auth/signup"]
+    PUBLIC_PATHS: list[str] = ["/", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/signup"]
 
     # JWT: must match user-service. SECRET_KEY >= 43 characters
     SECRET_KEY: str = Field(min_length=43)

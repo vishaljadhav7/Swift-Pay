@@ -7,7 +7,7 @@ from app.services.notification import notification_service
 from app.core.dependencies import get_db
 from app.core.auth import CurrentUser, get_current_user, require_admin, ensure_owner_or_admin
 
-router = APIRouter(prefix="/api/notify", tags=["Notification"])
+router = APIRouter(prefix="/api/v1/notifications", tags=["Notification"])
 
 
 @router.post("", response_model=NotificationResponse)

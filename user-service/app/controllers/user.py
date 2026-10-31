@@ -11,7 +11,7 @@ from app.services.user_service import user_service
 from app.core.dependencies import get_db
 from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1", tags=["Users"])
 
 
 @router.post("/auth/signup", status_code=200)
@@ -34,7 +34,7 @@ async def login(
     return TokenResponse(access_token=access_token, token_type=token_type)
 
 
-@router.get("/api/users/{user_id}", response_model=UserResponse)
+@router.get("/users/{user_id}", response_model=UserResponse)
 async def get_user_by_id(
     user_id: str,
     user: CurrentUser = Depends(get_current_user),
