@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, Enum as SQLEnum
+from sqlalchemy import String, DateTime, Enum as SQLEnum, Index
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, MappedAsDataclass
 import uuid6 
 import enum
@@ -40,7 +40,7 @@ class Transaction(Base):
     amount: Mapped[float] = mapped_column(nullable=False)
     
     idempotency_key: Mapped[str] = mapped_column(nullable=False, index=True)
-    
+     
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -53,6 +53,9 @@ class Transaction(Base):
         nullable=False
         )
     
+    __table_args__ = (
+        Index("ix_transaction_timestamp_id", "timestamp", "id"),
+    )
 
     
     
