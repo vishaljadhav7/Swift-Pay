@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import String, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, MappedAsDataclass
-import uuid
+import uuid6 
 import enum
 from sqlalchemy.sql import func
 
@@ -20,7 +20,7 @@ class Transaction(Base):
     
     id: Mapped[str] = mapped_column(
         String(36), 
-        default=lambda: str(uuid.uuid4()),
+        default=lambda: str(uuid6.uuid7()),
         primary_key=True,
         init=False
         )

@@ -24,12 +24,6 @@ def get_current_user(
     return CurrentUser(id=x_user_id, role=x_user_role or "")
 
 
-def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
-    if not user.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin access required")
-    return user
-
-
 def ensure_owner_or_admin(user: CurrentUser, *owner_ids: str) -> None:
     if not (user.is_admin or user.id in owner_ids):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "You are not allowed to access this resource")

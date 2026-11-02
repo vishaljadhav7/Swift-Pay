@@ -1,8 +1,8 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, Enum as SQLEnum 
+from sqlalchemy import String, DateTime, Enum as SQLEnum, Index 
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, MappedAsDataclass
 from sqlalchemy.sql import func
-import uuid
+import uuid6 
 import enum
 
 class Roles(str, enum.Enum):
@@ -18,7 +18,7 @@ class User(Base):
     
     id: Mapped[str] = mapped_column(
         String(36), 
-        default=lambda: str(uuid.uuid4()),
+        default=lambda: str(uuid6.uuid7()),
         primary_key=True,
         init=False
         )
@@ -50,5 +50,9 @@ class User(Base):
         init=False
     )
     
-    # def __repr__(self):
-    #     return f"<User(id={self.id}, email={self.email}, role={self.role})>"
+    __table_args__ = (
+        Index("ix_app_user_created_id", "created_at", "id"),
+    )
+    
+    def __repr__(self):
+        return f"<User(id={self.id}, email={self.email}, role={self.role})>"

@@ -1,21 +1,20 @@
 from datetime import datetime
-from sqlalchemy import String, Text, DateTime
+from sqlalchemy import String, Text, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, MappedAsDataclass
 
-import uuid
+import uuid6
 from sqlalchemy.sql import func
 
 
-class Base(DeclarativeBase, MappedAsDataclass):
+class Base(DeclarativeBase, MappedAsDataclass): 
     pass
     
-
 class Notification(Base):
     __tablename__ = "notifications"
     
     id: Mapped[str] = mapped_column(
         String(36), 
-        default=lambda: str(uuid.uuid4()),
+        default=lambda: str(uuid6.uuid7()),
         primary_key=True,
         init=False
         )
@@ -34,6 +33,10 @@ class Notification(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         init=False
+    )
+    
+    __table_args__ = (
+        Index("ix_notifications_user_sent", "user_id", "sent_at", "id"),
     )
 
     

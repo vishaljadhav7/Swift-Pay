@@ -2,22 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from app.schemas.notification import NotificationCreate, NotificationResponse
+from app.schemas.notification import NotificationResponse
 from app.services.notification import notification_service
 from app.core.dependencies import get_db
-from app.core.auth import CurrentUser, get_current_user, require_admin, ensure_owner_or_admin
+from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["Notification"])
-
-
-@router.post("", response_model=NotificationResponse)
-async def send_notification(
-    data: NotificationCreate,
-    _: CurrentUser = Depends(require_admin),
-    db: AsyncSession = Depends(get_db)
-) -> NotificationResponse:
-    """Send a notification manually (admin only)"""
-    return await notification_service.send_notification(db, data)
 
 
 @router.get("/{user_id}", response_model=List[NotificationResponse])

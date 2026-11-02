@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import ForeignKey, String, DateTime, Enum as SQLEnum 
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship, MappedAsDataclass
 from sqlalchemy.sql import func
-import uuid
+import uuid6
 import enum
 
 class WalletStatuses(str, enum.Enum):
@@ -19,7 +19,7 @@ class Wallet(Base):
     
     id: Mapped[str] = mapped_column(
         String(36), 
-        default=lambda: str(uuid.uuid4()),
+        default=lambda: str(uuid6.uuid7()),
         primary_key=True,
         init=False
         )
@@ -66,7 +66,7 @@ class WalletHold(Base):
     
     id: Mapped[str] = mapped_column(
         String(36), 
-        default=lambda: str(uuid.uuid4()),
+        default=lambda: str(uuid6.uuid7()),
         primary_key=True,
         init=False
         )

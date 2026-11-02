@@ -23,8 +23,7 @@ class Settings(BaseSettings):
     # ("/docs" and "/openapi.json" are for development only; remove them in production.)
     PUBLIC_PATHS: list[str] = ["/", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/signup"]
 
-    # JWT: must match user-service. SECRET_KEY >= 43 characters
-    SECRET_KEY: str = Field(min_length=43)
+    SECRET_KEY: str 
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     JWT_ISSUER: str = "swiftpay-user-service"

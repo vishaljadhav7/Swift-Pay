@@ -1,9 +1,9 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime
+from sqlalchemy import String, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, MappedAsDataclass
-import uuid
+import uuid6 
 from sqlalchemy.sql import func
-
+ 
 class Base(DeclarativeBase, MappedAsDataclass):
     pass
 
@@ -13,7 +13,7 @@ class Reward(Base):
     
     id: Mapped[str] = mapped_column(
         String(36), 
-        default=lambda: str(uuid.uuid4()),
+        default=lambda: str(uuid6.uuid7()),
         primary_key=True,
         init=False
         )
@@ -39,6 +39,10 @@ class Reward(Base):
         nullable=False, 
         index=True
         )
+    
+    __table_args__ = (
+        Index("ix_reward_user_sent", "user_id", "sent_at", "id"),
+    )
     
     def __repr__(self):
         return f"<Reward(id={self.id}, user_id={self.user_id}, points={self.points})>"
