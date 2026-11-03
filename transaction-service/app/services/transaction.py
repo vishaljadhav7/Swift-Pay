@@ -6,7 +6,7 @@ from hyx.circuitbreaker import consecutive_breaker
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreateRequest, TransactionResponse
 from app.repositories.transaction import transaction_repository
-
+from app.core.pagination import Page
 from app.core.exceptions import (
     TransactionNotFoundException,
     ServiceUnavailableException,
@@ -167,14 +167,9 @@ class TransactionService:
             raise TransactionNotFoundException(transaction_id)
         return TransactionResponse.from_orm(transaction)
     
-    async def get_transactions_by_user(
-        self, 
-        db: AsyncSession, 
-        user_id: int
-    ) -> List[TransactionResponse]:
-        """Get all transactions for a user"""
-        transactions = await transaction_repository.get_by_user(db, user_id)
-        return [TransactionResponse.from_orm(t) for t in transactions]
+    async def get_transactions_by_user(self, db: AsyncSession, user_id: str, limit: int, cursor: str | None) -> Page[TransactionResponse]:
+        transactions, next_cursor = await transaction_repository.get_by_user(db, user_id, limit, cursor)
+        return Page(items=[TransactionResponse.from_orm(t) for t in transactions], next_cursor=next_cursor)
     
     async def _call_wallet_service(self, method: str, endpoint: str, json_data: dict = None):
         async def make_request():

@@ -1,13 +1,12 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Request, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
-
 from app.schemas.transaction import TransactionCreateRequest, TransactionResponse
 
 from app.services.transaction import transaction_service
 from app.core.dependencies import get_db
 from app.core.exceptions import ForbiddenException
 from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
+from app.core.pagination import Page, DEFAULT_LIMIT, MAX_LIMIT
 
 router = APIRouter(prefix="/api/v1/transactions", tags=["Transaction"])
 
@@ -53,12 +52,13 @@ async def get_transaction_by_id(
     return txn
 
 
-@router.get("/user/{user_id}", response_model=List[TransactionResponse])
+@router.get("/user/{user_id}", response_model=Page[TransactionResponse])
 async def get_transactions_by_user(
     user_id: str,
+    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+    cursor: str | None = None,
     user: CurrentUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-) -> List[TransactionResponse]:
-    """Get all transactions for a user (the user themselves, or an admin)"""
+    db: AsyncSession = Depends(get_db),
+) -> Page[TransactionResponse]:
     ensure_owner_or_admin(user, user_id)
-    return await transaction_service.get_transactions_by_user(db, user_id)
+    return await transaction_service.get_transactions_by_user(db, user_id, limit, cursor)

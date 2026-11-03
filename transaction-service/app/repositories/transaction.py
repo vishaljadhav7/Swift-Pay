@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from typing import Optional, List
 from app.models.transaction import Transaction
 from app.core.exceptions import AppException
+from app.core.pagination import paginate
 
 
 class TransactionRepository:
@@ -41,17 +42,12 @@ class TransactionRepository:
         except SQLAlchemyError as e:
             raise AppException(f"Database error fetching transaction: {str(e)}", status_code=500)
     
-    async def get_by_user(self, db: AsyncSession, user_id: str) -> List[Transaction]:
-        """Get all transactions for a user (as sender or receiver)"""
+    async def get_by_user(self, db: AsyncSession, user_id: str, limit: int, cursor: str | None):
         try:
             stmt = select(Transaction).where(
-                or_(
-                    Transaction.sender_id == user_id,
-                    Transaction.receiver_id == user_id
-                )
-            ).order_by(Transaction.timestamp.desc())
-            result = await db.execute(stmt)
-            return list(result.scalars().all())
+                or_(Transaction.sender_id == user_id, Transaction.receiver_id == user_id)
+            )
+            return await paginate(db, stmt, Transaction.timestamp, Transaction.id, limit, cursor)
         except SQLAlchemyError as e:
             raise AppException(f"Database error fetching user transactions: {str(e)}", status_code=500)
     
