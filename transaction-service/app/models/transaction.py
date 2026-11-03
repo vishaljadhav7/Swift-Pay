@@ -53,11 +53,6 @@ class Transaction(Base):
         nullable=False
         )
     
-    __table_args__ = (
-        Index("ix_transaction_timestamp_id", "timestamp", "id"),
-    )
-
-    
     
     def __repr__(self):
         return f"<Transaction(id={self.id}, sender={self.sender_id}, receiver={self.receiver_id}, status={self.status})>"
