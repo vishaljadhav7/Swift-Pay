@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from typing import Optional, List
 from app.models.user import User
 from app.core.exceptions import UserAlreadyExistsException, AppException
-
+from app.core.pagination import paginate
 
 class UserRepository:
     """Handles database operations for users"""
@@ -41,14 +41,8 @@ class UserRepository:
         except SQLAlchemyError as e:
             raise AppException(f"Database error fetching user: {str(e)}", status_code=500)
     
-    async def get_all(self, db: AsyncSession) -> List[User]:
-        """Get all users"""
-        try:
-            stmt = select(User)
-            result = await db.execute(stmt)
-            return list(result.scalars().all())
-        except SQLAlchemyError as e:
-            raise AppException(f"Database error fetching users: {str(e)}", status_code=500)
+    async def get_all(self, db: AsyncSession, limit: int, cursor: str | None):
+        return await paginate(db, select(User), User.created_at, User.id, limit, cursor)
     
     async def delete(self, db: AsyncSession, user_id: int) -> bool:
         """Delete user by ID"""

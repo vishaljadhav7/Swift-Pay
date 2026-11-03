@@ -13,6 +13,7 @@ from app.core.exceptions import (
     ServiceUnavailableException
 )
 import httpx
+from app.core.pagination import Page
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +77,9 @@ class UserService:
             raise UserNotFoundException(user_id)
         return UserResponse.from_orm(user)
     
-    async def get_all_users(self, db: AsyncSession) -> List[UserResponse]:
-        """Get all users"""
-        users = await user_repository.get_all(db)
-        return [UserResponse.from_orm(user) for user in users]
+    async def get_all_users(self, db: AsyncSession, limit: int, cursor: str | None) -> Page[UserResponse]:
+        users, next_cursor = await user_repository.get_all(db, limit, cursor)
+        return Page(items=[UserResponse.from_orm(u) for u in users], next_cursor=next_cursor)
     
     async def _create_wallet_for_user(self, user_id: str):
         async def create_wallet():
