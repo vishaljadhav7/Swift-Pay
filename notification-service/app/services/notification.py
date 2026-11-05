@@ -23,7 +23,8 @@ class NotificationService:
         """Send a notification"""
         notification = Notification(
             user_id=data.user_id,
-            message=data.message
+            message=data.message,
+            transaction_id=data.transaction_id,
         )
         created = await notification_repository.create(db, notification)
         return NotificationResponse.from_orm(created)

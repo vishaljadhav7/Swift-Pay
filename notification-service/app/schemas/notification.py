@@ -6,6 +6,7 @@ class NotificationCreate(BaseModel):
     """Request to create notification"""
     user_id: str
     message: str
+    transaction_id: str | None = None
 
 
 class NotificationResponse(BaseModel):

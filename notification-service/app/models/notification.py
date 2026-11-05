@@ -29,11 +29,14 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     
     
+    
     sent_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         init=False
     )
+    
+    transaction_id: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, default=None)    
     
     __table_args__ = (
         Index("ix_notifications_user_sent", "user_id", "sent_at", "id"),

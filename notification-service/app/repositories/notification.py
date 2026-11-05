@@ -17,5 +17,9 @@ class NotificationRepository:
         await db.commit()
         await db.refresh(notification)
         return notification
+    
+    async def exists_by_transaction_id(self, db: AsyncSession, transaction_id: str) -> bool:
+        stmt = select(Notification.id).where(Notification.transaction_id == transaction_id).limit(1)
+        return (await db.scalar(stmt)) is not None
 
 notification_repository = NotificationRepository()
