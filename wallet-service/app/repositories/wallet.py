@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError, DBAPIError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from typing import Optional, List
 from datetime import datetime
 from app.models.wallet import Wallet, WalletHold, WalletStatuses
-from app.core.exceptions import ConflictException, WalletNotFoundException, HoldNotFoundException, AppException
+from app.core.exceptions import ConflictException, AppException
 
 class WalletRepository:
     """Handling database operations for wallets"""

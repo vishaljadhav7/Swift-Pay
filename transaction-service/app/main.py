@@ -8,6 +8,8 @@ from app.utils.kafka_client import KafkaProducerClient
 from app.services.transaction import transaction_service
 from app.controllers.transaction import router as transaction_router
 from app.middleware.exception_handler_middleware import register_exception_handlers
+import asyncio
+from app.tasks.outbox_relay import run_outbox_relay
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,12 +32,17 @@ async def lifespan(app: FastAPI):
     
     # Start Kafka producer
     await kafka_producer.start()
-    transaction_service.set_kafka_producer(kafka_producer)
+    relay_task = asyncio.create_task(run_outbox_relay(kafka_producer))
     
     yield
     
     # Shutdown
     logger.info("Shutting down...")
+    relay_task.cancel()
+    try:
+        await relay_task
+    except asyncio.CancelledError:
+        pass
     await kafka_producer.stop()
     await close_db()
     logger.info("Shutdown complete")

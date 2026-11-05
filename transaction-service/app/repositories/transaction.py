@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from typing import Optional, List
+from typing import Optional
 from app.models.transaction import Transaction
 from app.core.exceptions import AppException
 from app.core.pagination import paginate

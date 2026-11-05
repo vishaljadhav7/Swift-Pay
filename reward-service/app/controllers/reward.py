@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
 from app.schemas.reward import RewardResponse
 from app.services.reward import reward_service

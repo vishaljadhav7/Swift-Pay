@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Tuple, List
+from typing import Tuple
 import logging
 import asyncio
-from app.schemas.user import  LoginRequest,  UserResponse, WalletCreateRequest, SignupRequest
+from app.schemas.user import  LoginRequest,  UserResponse, SignupRequest
 from app.models.user import User, Roles
 from hyx.circuitbreaker import consecutive_breaker
 from app.repositories.user import user_repository

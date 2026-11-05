@@ -13,7 +13,8 @@ from app.core.exceptions import (
     DuplicateTransactionException
 )
 
-from app.utils.kafka_client import KafkaProducerClient
+from app.core.config import settings
+from app.models.outbox_event import OutboxEvent
 
 logger = logging.getLogger(__name__)
 
@@ -23,16 +24,11 @@ class TransactionService:
     
     def __init__(self):
         self.wallet_service_url = "http://wallet-service:8088/api/v1/wallets"
-        self.kafka_producer: KafkaProducerClient | None = None
         
         self.wallet_breaker = consecutive_breaker(
             failure_threshold=5,
             recovery_time_secs=30,
         )
-    
-    def set_kafka_producer(self, producer: KafkaProducerClient):
-        """Set Kafka producer instance"""
-        self.kafka_producer = producer
         
     async def create_transaction(
         self, 
@@ -120,9 +116,21 @@ class TransactionService:
                 logger.info("Transaction FAILED (credit failed & refunded sender)")
                 return TransactionResponse.from_orm(saved_transaction)
             
-            # Mark transaction as SUCCESS
+            # Mark SUCCESS and queue the Kafka event in the SAME commit
             saved_transaction.status = "SUCCESS"
-            await transaction_repository.update(db, saved_transaction)
+            db.add(OutboxEvent(
+                topic=settings.KAFKA_TOPIC,
+                key=str(saved_transaction.id),
+                payload={
+                    "id": saved_transaction.id,
+                    "sender_id": saved_transaction.sender_id,
+                    "receiver_id": saved_transaction.receiver_id,
+                    "amount": saved_transaction.amount,
+                    "timestamp": saved_transaction.timestamp.isoformat(),
+                    "status": "SUCCESS",
+                },
+            ))
+            await transaction_repository.update(db, saved_transaction)   # one commit saves both
             logger.info(f"Transaction SUCCESS: {saved_transaction.id}")
             
         except Exception as e:
@@ -133,26 +141,6 @@ class TransactionService:
             await transaction_repository.update(db, saved_transaction)
             logger.info("Transaction FAILED saved")
             return TransactionResponse.from_orm(saved_transaction)   
-        
-        # Send Kafka event
-        if self.kafka_producer and saved_transaction.status == "SUCCESS":
-            try:
-                event_data = {
-                    "id": saved_transaction.id,
-                    "sender_id": saved_transaction.sender_id,
-                    "receiver_id": saved_transaction.receiver_id,
-                    "amount": saved_transaction.amount,
-                    "timestamp": saved_transaction.timestamp.isoformat(),
-                    "status": saved_transaction.status
-                }
-                await self.kafka_producer.send_message(
-                    topic="txn-initiated",
-                    key=str(saved_transaction.id),
-                    value=event_data
-                )
-                logger.info("Kafka message sent")
-            except Exception as e:
-                logger.error(f"Failed to send Kafka event: {e}")
         
         return TransactionResponse.from_orm(saved_transaction) 
         
