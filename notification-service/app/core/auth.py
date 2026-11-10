@@ -1,6 +1,14 @@
 from dataclasses import dataclass
+from pathlib import Path
 
-from fastapi import Depends, Header, HTTPException, status
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.core.config import settings
+
+PUBLIC_KEY = Path(settings.JWT_PUBLIC_KEY_PATH).read_text()   
+bearer = HTTPBearer(auto_error=False)                         
 
 
 @dataclass(frozen=True)
@@ -15,13 +23,29 @@ class CurrentUser:
 
 
 def get_current_user(
-    x_user_id: str | None = Header(default=None),
-    x_user_role: str | None = Header(default=None),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ) -> CurrentUser:
-    """Who is calling: the gateway sets these headers after it checked the JWT."""
-    if not x_user_id:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
-    return CurrentUser(id=x_user_id, role=x_user_role or "")
+    """Who is calling: check the user's JWT here, with the public key. No call to any other service."""
+    if credentials is None:
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED, "Not authenticated", headers={"WWW-Authenticate": "Bearer"}
+        )
+    try:
+        claims = jwt.decode(
+            credentials.credentials,
+            PUBLIC_KEY,
+            algorithms=["RS256"],                    # allow-list: the token cannot choose its algorithm
+            audience=settings.JWT_AUDIENCE,
+            issuer=settings.JWT_ISSUER,
+            options={"require": ["exp", "iat", "sub", "iss", "aud", "role"]},
+        )
+    except jwt.InvalidTokenError:                    # expired, bad signature, wrong iss/aud, missing claim...
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Invalid or expired token",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+        )
+    return CurrentUser(id=claims["sub"], role=claims["role"])
 
 
 def ensure_owner_or_admin(user: CurrentUser, *owner_ids: str) -> None:

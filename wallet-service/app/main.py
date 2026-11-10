@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.tasks.hold_expiry_scheduler import hold_expiry_scheduler
 from app.middleware.exception_handler_middleware import register_exception_handlers
 
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'

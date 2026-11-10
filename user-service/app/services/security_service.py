@@ -5,9 +5,12 @@ import jwt
 import bcrypt
 from app.core.config import settings
 from app.core.exceptions import AppException
+from pathlib import Path
 
 BCRYPT_ROUNDS = 12        
 BCRYPT_MAX_BYTES = 72
+
+PRIVATE_KEY = Path(settings.PRIVATE_KEY_PATH).read_text()
 
 class SecurityService:
     """Handles password hashing and JWT operations"""
@@ -38,7 +41,7 @@ class SecurityService:
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(seconds=expires_in_seconds)).timestamp()),
         }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
         return token, jti, expires_in_seconds
     
 

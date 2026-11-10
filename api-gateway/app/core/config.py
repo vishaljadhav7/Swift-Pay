@@ -19,22 +19,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_REPLENISH_RATE: int = 10  # requests per minute
     RATE_LIMIT_BURST_CAPACITY: int = 20
 
-    # Deny by default: only these exact paths work without a token.
-    # ("/docs" and "/openapi.json" are for development only; remove them in production.)
-    PUBLIC_PATHS: list[str] = ["/", "/docs", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/signup"]
-
-    SECRET_KEY: str 
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    JWT_ISSUER: str = "swiftpay-user-service"
-    JWT_AUDIENCE: str = "swiftpay-api"
 
     # Browser origins allowed to call the API, e.g. ["http://localhost:3000"]
     CORS_ALLOWED_ORIGINS: list[str] = []
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
 
 settings = Settings()

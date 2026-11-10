@@ -12,7 +12,7 @@ from app.core.exceptions import (
     ServiceUnavailableException,
     DuplicateTransactionException
 )
-
+from app.core.service_token import make_service_token
 from app.core.config import settings
 from app.models.outbox_event import OutboxEvent
 
@@ -166,6 +166,7 @@ class TransactionService:
                     method=method,
                     url=f"{self.wallet_service_url}{endpoint}",
                     json=json_data,
+                    headers={"Authorization": f"Bearer {make_service_token('wallet-service')}"},
                     timeout=10.0,
                 )
                 response.raise_for_status()

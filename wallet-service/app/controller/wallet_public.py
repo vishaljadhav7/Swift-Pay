@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.core.service_auth import allow_callers
 from app.schemas.wallet import WalletResponse
 from app.services.wallet import wallet_service
 from app.core.dependencies import get_db
 from app.core.auth import CurrentUser, get_current_user, ensure_owner_or_admin
 
-router = APIRouter(prefix="/api/wallets", tags=["Wallet (public)"])
+router = APIRouter(prefix="/api/wallets", tags=["Wallet (public)"], dependencies=[Depends(allow_callers("user-service"))])
 
 
 @router.get("/{user_id}", response_model=WalletResponse)

@@ -31,14 +31,7 @@ class ProxyService:
         if request.url.query:
             full_url = f"{full_url}?{request.url.query}"
         
-        # never trust identity headers sent by the client; set them only from the verified token
-        headers = {k: v for k, v in request.headers.items() if not k.lower().startswith("x-user-")}
-        
-        if hasattr(request.state, "user_id"):
-            headers["X-User-Id"] = str(request.state.user_id)
-            headers["X-User-Email"] = str(request.state.email)
-            headers["X-User-Role"] = str(request.state.role)
-        
+        headers = dict(request.headers)
         headers.pop("host", None)
         
         logger.info(f"Proxying {request.method} {request.url.path} -> {full_url}")

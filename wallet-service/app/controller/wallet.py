@@ -11,8 +11,9 @@ from app.schemas.wallet import (
 )
 from app.services.wallet import wallet_service
 from app.core.dependencies import get_db
+from app.core.service_auth import allow_callers
 
-router = APIRouter(prefix="/api/v1/wallets", tags=["Wallet"])
+router = APIRouter(prefix="/api/v1/wallets", tags=["Wallet"], dependencies=[Depends(allow_callers("transaction-service"))])
 
 
 @router.post("", response_model=WalletResponse, status_code=201)

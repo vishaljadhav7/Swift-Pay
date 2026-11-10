@@ -11,32 +11,17 @@ from app.core.pagination import Page, DEFAULT_LIMIT, MAX_LIMIT
 router = APIRouter(prefix="/api/v1/transactions", tags=["Transaction"])
 
 
-
 @router.post("", response_model=TransactionResponse)
 async def create_transaction(
-    request: Request,
     data: TransactionCreateRequest,
+    user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> TransactionResponse:
-    """Create a money transfer transaction"""
-    # Read userId from gateway header
-    user_id_header = request.headers.get("X-User-Id")
-    
-    if not user_id_header:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Missing X-User-Id header from gateway"
-        )
-    
-    token_user_id = str(user_id_header)
-    request_sender_id = data.sender_id
-    
-    # Verify authorization: user can only send from their own account
-    if request_sender_id != token_user_id:
+    """Create a money transfer transaction (the sender must be the logged-in user)"""
+    if data.sender_id != user.id:
         raise ForbiddenException(
             "User ID mismatch: You are not authorized to create this transaction"
         )
-    
     return await transaction_service.create_transaction(db, data)
 
 

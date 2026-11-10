@@ -14,6 +14,7 @@ from app.core.exceptions import (
 )
 import httpx
 from app.core.pagination import Page
+from app.core.service_token import make_service_token
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class UserService:
                 response = await client.post(
                     self.wallet_service_url,
                     json={"user_id": user_id, "currency": "INR"},
+                    headers={"Authorization": f"Bearer {make_service_token('wallet-service')}"},
                     timeout=10.0
                 )
                 response.raise_for_status()

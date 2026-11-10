@@ -12,8 +12,10 @@ class Settings(BaseSettings):
     
     WALLET_SERVICE_URL: str = "http://wallet-service:8088"
     
-    SECRET_KEY : str 
-    ALGORITHM : str = "HS256"
+    # JWT keys: user-service signs with the private key; every service verifies with the public key
+    PRIVATE_KEY_PATH: str = "/keys/user-service.private.pem"
+    JWT_PUBLIC_KEY_PATH: str = "/keys/user-service.public.pem"
+    
     ACCESS_TOKEN_EXPIRE_MINUTES : int 
     
     JWT_ISSUER: str = "swiftpay-user-service"

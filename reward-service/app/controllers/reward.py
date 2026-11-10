@@ -7,7 +7,7 @@ from app.core.dependencies import get_db
 from app.core.pagination import Page, DEFAULT_LIMIT, MAX_LIMIT
 
 
-router = APIRouter(prefix="/api/v1/rewards", tags=["Reward"])
+router = APIRouter(prefix="/api/v1/rewards", tags=["Reward"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/user/{user_id}", response_model=Page[RewardResponse])

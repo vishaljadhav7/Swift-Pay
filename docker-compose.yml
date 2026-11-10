@@ -136,6 +136,9 @@ services:
     depends_on:
       postgres-user: { condition: service_healthy }
     networks: [paypal-network]
+    volumes:
+      - ./keys/user-service.private.pem:/keys/user-service.private.pem:ro
+      - ./keys/user-service.public.pem:/keys/user-service.public.pem:ro
 
   wallet-service:
     build: ./wallet-service
@@ -143,6 +146,9 @@ services:
     depends_on:
       postgres-wallet: { condition: service_healthy }
     networks: [paypal-network]
+    volumes:
+      - ./keys/user-service.public.pem:/keys/user-service.public.pem:ro
+      - ./keys/transaction-service.public.pem:/keys/transaction-service.public.pem:ro
 
   transaction-service:
     build: ./transaction-service
@@ -152,6 +158,9 @@ services:
       kafka: { condition: service_healthy }
       wallet-service: { condition: service_started }
     networks: [paypal-network]
+    volumes:
+      - ./keys/user-service.public.pem:/keys/user-service.public.pem:ro
+      - ./keys/transaction-service.private.pem:/keys/transaction-service.private.pem:ro
 
   notification-service:
     build: ./notification-service
@@ -160,6 +169,8 @@ services:
       postgres-notify: { condition: service_healthy }
       kafka-init: { condition: service_completed_successfully }
     networks: [paypal-network]
+    volumes:
+      - ./keys/user-service.public.pem:/keys/user-service.public.pem:ro
 
   reward-service:
     build: ./reward-service
@@ -168,6 +179,8 @@ services:
       postgres-reward: { condition: service_healthy }
       kafka-init: { condition: service_completed_successfully }
     networks: [paypal-network]
+    volumes:
+      - ./keys/user-service.public.pem:/keys/user-service.public.pem:ro
 
   api-gateway:
     build: ./api-gateway

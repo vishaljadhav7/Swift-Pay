@@ -13,6 +13,7 @@ dependencies = [
     "hyx>=0.0.2",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
+    "pyjwt[crypto]>=2.10.1",
     "python-multipart>=0.0.21",
     "sqlalchemy>=2.0.45",
     "uuid6>=2025.0.1",
