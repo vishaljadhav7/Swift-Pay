@@ -43,7 +43,16 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down...")
+    
     consumer_task.cancel()
+    
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        logger.exception("Consumer task had already failed before shutdown")
+    
     await kafka_consumer.stop()
     await close_db()
     logger.info("Shutdown complete")

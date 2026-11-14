@@ -1,9 +1,15 @@
+import asyncio
 import json
 import logging
 from typing import Any, Dict, Callable
+
 from aiokafka import AIOKafkaConsumer
+from aiokafka.structs import TopicPartition
 
 logger = logging.getLogger(__name__)
+
+RETRY_DELAY_SECONDS = 1
+MAX_RETRY_DELAY_SECONDS = 30
 
 class KafkaConsumerClient:
     """Async Kafka Consumer wrapper"""
@@ -26,8 +32,8 @@ class KafkaConsumerClient:
             bootstrap_servers=self.bootstrap_servers,
             group_id=self.group_id,
             value_deserializer=self._deserialize_value,
-            auto_offset_reset='earliest',
-            enable_auto_commit=True
+            auto_offset_reset="earliest",
+            enable_auto_commit=False  # Manual offset commits
         )
         await self.consumer.start()
         logger.info(f"Kafka consumer started for topic '{self.topic}' in group '{self.group_id}'")
@@ -39,22 +45,51 @@ class KafkaConsumerClient:
             logger.info("Kafka consumer stopped")
     
     async def consume_messages(self, handler: Callable):
-        """Consume messages and process with handler"""
+        """Process messages and commit offsets only after successful handling"""
         if not self.consumer:
             raise RuntimeError("Consumer not started")
-        
+
         try:
             async for message in self.consumer:
-                try:
-                    logger.info(f"Received message from topic '{self.topic}': key={message.key}")
-                    await handler(message.value)
-                except Exception as e:
-                    logger.error(f"Error processing message: {e}", exc_info=True)
-        except Exception as e:
-            logger.error(f"Error in consumer loop: {e}", exc_info=True)
+                retry_delay = RETRY_DELAY_SECONDS
+
+                while True:
+                    try:
+                        # 1. Process the event and persist its business result
+                        await handler(message.value)
+
+                        # 2. Commit only this message's next offset
+                        topic_partition = TopicPartition(message.topic, message.partition)
+                        await self.consumer.commit({topic_partition: message.offset + 1})
+
+                        logger.info(
+                            f"Successfully processed and committed "
+                            f"topic={message.topic}, "
+                            f"partition={message.partition}, "
+                            f"offset={message.offset}"
+                        )
+                        break
+
+                    except asyncio.CancelledError:
+                        raise
+
+                    except Exception:
+                        logger.exception(
+                            f"Failed to process/commit message at "
+                            f"offset={message.offset}. Retrying in "
+                            f"{retry_delay} seconds without committing."
+                        )
+                        await asyncio.sleep(retry_delay)
+                        retry_delay = min(retry_delay * 2, MAX_RETRY_DELAY_SECONDS)
+
+        except asyncio.CancelledError:
             raise
+        except Exception:
+            logger.exception("Kafka consumer loop failed")
+            raise
+
     
     @staticmethod
     def _deserialize_value(value: bytes) -> Dict[str, Any]:
         """Deserialize JSON value"""
-        return json.loads(value.decode('utf-8'))
+        return json.loads(value.decode("utf-8"))
